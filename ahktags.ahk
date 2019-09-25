@@ -36,7 +36,8 @@ class AhkTags {
 				, AhkTags.options.sortTags))
 		op.add(new OptParser.Boolean("r", "recurse"
 				, AhkTags.options, "recurse"
-				, "Recurse into directories"))
+				, "Recurse into directories"
+				, OptParser.OPT_NEG))
 		op.add(new OptParser.String("f", ""
 				, AhkTags.options, "tagFile", "name"
 				, "Specify the name of the file to write. (Default is '"
@@ -217,12 +218,12 @@ class AhkTags {
 	}
 
 	sortTagsIfRequested() {
-		tags := AhkTags.tags
 		if (AhkTags.options.sortTags) {
+			tags := AhkTags.tags
 			AhkTags.verboseOutput("Sort tags")
 			Sort tags, C
+			AhkTags.tags := tags
 		}
-		AhkTags.tags := tags
 	}
 
 	writeTagFile() {
@@ -249,7 +250,6 @@ class AhkTags {
 	closeOutputFile() {
 		AhkTags.outputFile.close()
 	}
-
 }
 
 #NoEnv ; notest-begin
