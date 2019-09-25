@@ -16,7 +16,7 @@ class AhkTags {
 	setDefaults() {
 		AhkTags.options
 				:= { help: false
-				, encoding: "utf-8"
+				, encoding: "utf-8-raw"
 				, recurse: false
 				, tagFileFormat: 2
 				, tagFile: "tags"
@@ -133,8 +133,8 @@ class AhkTags {
 					, "^\s*([a-z0-9_#@$]+)\([\w\W\s\S]*?\)\s*\{"
 					, 1, "mi`a", "f")
 			AhkTags.searchTags(fileName, maskedContent
-					, "^\s*([a-z0-9_#@$]+)::"
-					, 1, "mi`a", "f")
+					, "^\s*([a-z0-9_#@$]+):[^:]"
+					, 1, "mi`a", "l")
 		} finally {
 			inputFile.close()
 		}
@@ -193,7 +193,7 @@ class AhkTags {
 				. "!_TAG_FILE_PROGRAM`t" A_ScriptName "`n"
 				. "!_TAG_FILE_VERSION`t" AhkTags.versionInfo() "`n"
 				. "!_TAG_FILE_URL`t" AhkTags.url "`n"
-				. "!_TAG_FILE_AUTHOR`t" AhkTags.author "`t/" AhkTags.email "`n"
+				. "!_TAG_FILE_AUTHOR`t" AhkTags.author "`t/" AhkTags.email "/`n"
 		AhkTags.tags := headers . AhkTags.tags
 	}
 
