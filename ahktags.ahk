@@ -220,7 +220,7 @@ class AhkTags {
 		tags := AhkTags.tags
 		if (AhkTags.options.sortTags) {
 			AhkTags.verboseOutput("Sort tags")
-			Sort tags
+			Sort tags, C
 		}
 		AhkTags.tags := tags
 	}
