@@ -42,13 +42,13 @@ class AhkTagsTest extends TestCase {
 		this.assertEquals(AhkTags.findEndOfLine("abc`n"
 				. "    if (x == 0) {`n"
 				. "        x++`n"
-				. "    }", 9), 21)
+				. "    }", 9), 22)
 		this.assertEquals(AhkTags.findEndOfLine("    if (x == 0) {`n"
 				. "        x++`n"
-				. "    }", 9), 17)
+				. "    }", 9), 18)
 		this.assertEquals(AhkTags.findEndOfLine("    if (x == 0) {`n"
 				. "        x++`n"
-				. "    }", 34), 34)
+				. "    }", 34), 36)
 	}
 
 	@Test_determineFiles() {

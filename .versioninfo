@@ -1,1 +1,1 @@
-G_VERSION_INFO := {NAME: "AHK ahktags version 19.03-rc1", ARCH: "x64", BUILD: "9a70634"}
+G_VERSION_INFO := {NAME: "AHK ahktags version 19.03-rc3", ARCH: "x64", BUILD: "ffd2f75"}
