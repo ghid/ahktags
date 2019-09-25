@@ -1,0 +1,16 @@
+/* 
+ * XXXX XXXX XXXXXX
+ */
+
+main
+	if (dummy(A_Args) == "dummy") { ; XXXX XXXXX XXXXXXXX
+		MsgBox Dummy returned "dummy"
+	}
+exitapp
+
+/***
+ * X XXXXX XXXXXXXX
+ */
+dummy() {
+	return "dummy" ; XXXX XXXXXX XXX XXXXXX XXXXX
+}

@@ -1,0 +1,16 @@
+/* 
+ * Some code sample
+ */
+
+main
+	if (dummy(A_Args) == "dummy") { ; call dummy function
+		MsgBox Dummy returned "dummy"
+	}
+exitapp
+
+/***
+ * A dummy function
+ */
+dummy() {
+	return "dummy" ; Just return the string dummy
+}
