@@ -22,12 +22,16 @@ class AhkTags {
 				, tagFile: "tags"
 				, sortTags: true
 				, verbose: false
-				, version: false }
+				, version: false
+				, fileType: []
+				, fileExtension: []
+				, tagRegEx: [] }
 	}
 
 	cli() {
 		op := new OptParser(["ahktags [options] [file(s) [file(s)]...]"]
-				, OptParser.PARSER_ALLOW_DASHED_ARGS)
+				, OptParser.PARSER_ALLOW_DASHED_ARGS, "AHKTAGS_OPTIONS"
+				, ".ahktagsrc")
 		op.add(new OptParser.Group("Options:"))
 		op.add(new OptParser.Boolean("s", "sort"
 				, AhkTags.options, "sortTags"
@@ -37,7 +41,7 @@ class AhkTags {
 		op.add(new OptParser.Boolean("r", "recurse"
 				, AhkTags.options, "recurse"
 				, "Recurse into directories"
-				, OptParser.OPT_NEG))
+				, OptParser.OPT_NEG|OptParser.OPT_NEG_USAGE))
 		op.add(new OptParser.String("f", ""
 				, AhkTags.options, "tagFile", "name"
 				, "Specify the name of the file to write. (Default is '"
@@ -51,15 +55,33 @@ class AhkTags {
 				. AhkTags.options.encoding "')"
 				, OptParser.OPT_ARGREQ
 				, AhkTags.options.encoding, AhkTags.options.encoding))
+		op.add(new OptParser.RcFile(0, "ahktagsrc"
+				, AhkTags.options, "ahktagsrc", "file"
+				, "Specify an ahktagsrc file to load after all others"))
 		op.add(new OptParser.Boolean("v", "verbose"
 				, AhkTags.options, "verbose"
 				, "Enable verbose mode"))
+		op.add(new OptParser.Boolean(0, "env"
+				, AhkTags.options, "env"
+				, "Ignore environment variable " op.envVarName
+				, OptParser.OPT_NEG|OptParser.OPT_NEG_USAGE))
 		op.add(new OptParser.Boolean("h", "help"
 				, AhkTags.options, "help"
 				, "This help", OptParser.OPT_HIDDEN))
 		op.add(new OptParser.Boolean(0, "version"
 				, AhkTags.options, "version"
 				, "Display version info"))
+		op.add(new OptParser.Group("`nManage file types:"))
+		op.add(new OptParser.Callback(0, "add-filetype"
+				, AhkTags.options, "file_Extension"
+				,  "cb_addFileType", "name=ext[+ext]..."
+				, "Add a file type and map file extension(s)"
+				, OptParser.OPT_ARG))
+		op.add(new OptParser.Callback(0, "add-regex"
+				, AhkTags.options, "file_RegEx"
+				, "cb_addRegEx", "name=regex/replacement/regex-options/kind"
+				, "Add a tag-pattern for a file type"
+				, OptParser.OPT_ARG))
 		return op
 	}
 
@@ -91,7 +113,8 @@ class AhkTags {
 	}
 
 	versionInfo() {
-		global G_VERSION_INFO
+		global G_VERSION_INFO := ""
+		#Include *i %A_ScriptDir%\.versioninfo
 		return G_VERSION_INFO.NAME "/" G_VERSION_INFO.ARCH
 				. "-" G_VERSION_INFO.BUILD
 	}
@@ -112,7 +135,8 @@ class AhkTags {
 		fileNames := []
 		loop files, %filePattern%, % (AhkTags.options.recurse ? "R" : "")
 		{
-			if (RegExMatch(A_LoopFileLongPath, "i)\.ahk$")) {
+			SplitPath A_LoopFileLongPath,,, fileExt
+			if (AhkTags.options.fileExtension.hasKey(fileExt)) {
 				fileNames.push(A_LoopFileLongPath)
 			}
 		}
@@ -120,22 +144,25 @@ class AhkTags {
 	}
 
 	tagFile(fileName) {
-		inputFile := FileOpen(fileName, "r")
 		try {
-			if (AhkTags.options.verbose) {
-				Ansi.writeLine("Open " fileName)
+			AhkTags.verboseOutput("Open " fileName)
+			inputFile := FileOpen(fileName, "r")
+			SplitPath fileName,,, fileExt
+			if (AhkTags.options.fileExtension.hasKey(fileExt)) {
+				fileType := AhkTags.options.fileExtension[fileExt]
+				AhkTags.verboseOutput("Filetype " fileExt " is " fileType)
+				content := inputFile.read()
+				maskedContent := AhkTags.maskComments(content)
+				AhkTags.verboseOutput(fileType " has "
+						. AhkTags.options.tagRegEx[fileType].maxIndex()
+						. " pattern(s)")
+				loop % AhkTags.options.tagRegEx[fileType].maxIndex() {
+					tagDefinition := AhkTags.options.tagRegEx[fileType, A_Index]
+					AhkTags.searchTags(fileName, maskedContent
+							, tagDefinition.regEx, tagDefinition.replacement
+							, tagDefinition.regExOptions, tagDefinition.kind)
+				}
 			}
-			content := inputFile.read()
-			maskedContent := AhkTags.maskComments(content)
-			AhkTags.searchTags(fileName, maskedContent
-					, "^\s*class\s+([a-z0-9_#@$]+)"
-					, 1, "mi`a", "c")
-			AhkTags.searchTags(fileName, maskedContent
-					, "^\s*([a-z0-9_#@$]+)\([\w\W\s\S]*?\)\s*\{"
-					, 1, "mi`a", "f")
-			AhkTags.searchTags(fileName, maskedContent
-					, "^\s*([a-z0-9_#@$]+):[^:]"
-					, 1, "mi`a", "l")
 		} finally {
 			inputFile.close()
 		}
@@ -252,6 +279,40 @@ class AhkTags {
 	}
 }
 
+cb_AddFileType(value, noOption="") {
+	if (RegExMatch(value
+			, "i)(?P<Name>[a-z0-9-_$#@]+)=(?P<Extensions>[a-z0-9-_$#@+]+)"
+			, fileType)) {
+		AhkTags.options.fileType[fileTypeName] := true
+		AhkTags.options.tagRegEx[fileTypeName] := []
+		extensions := StrSplit(fileTypeExtensions, "+")
+		loop % extensions.maxIndex() {
+			extension := extensions[A_Index]
+			AhkTags.options.fileExtension[extension] := fileTypeName
+		}
+	} else {
+		throw Exception("Add filetype: Invalid filetype " value)
+	}
+}
+
+cb_addRegEx(value, noOption="") {
+	if (RegExMatch(value
+			, "^(?P<FileTypeName>[a-z0-9-_$#@]+)=\/(?P<RegEx>.+?)"
+			. "\/(?P<Replacement>.+?)\/(?P<RegExOptions>.+?)\/(?P<Kind>.+?)$"
+			, pattern)) {
+		if (!AhkTags.options.fileType.hasKey(patternFileTypeName)) {
+			throw Exception("Add regex: Invalid filetype " patternFileTypeName)
+		}
+		AhkTags.options.tagRegEx[patternFileTypeName]
+				.push(Object("regEx", patternRegEx
+				, "replacement", patternReplacement
+				, "regExOptions", patternRegExOptions
+				, "kind", patternKind))
+	} else {
+		throw Exception("Invalid regex pattern: " value)
+	}
+}
+
 #NoEnv ; notest-begin
 #NoTrayIcon
 #SingleInstance Off
@@ -262,7 +323,7 @@ SetBatchLines -1
 #Include <optparser>
 #Include <string>
 #Include <object>
-#Include *i %A_ScriptDir%\.versioninfo
+#Include <testcase>
 
 main:
 	Ansi.NO_BUFFER := true

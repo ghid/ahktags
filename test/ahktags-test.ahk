@@ -69,6 +69,48 @@ class AhkTagsTest extends TestCase {
 		this.assertEquals(fileNames[2]
 				, A_ScriptDir "\testdata\modules\Player.ahk")
 	}
+
+	@Test_addFileType() {
+		AhkTags.run(["--add-filetype", "autohotkey=ahk+ahi"
+				, "--add-filetype", "vimscript=vim"])
+		this.assertEquals(AhkTags.options.fileExtension["ahk"], "autohotkey")
+		this.assertEquals(AhkTags.options.fileExtension["ahi"], "autohotkey")
+		this.assertEquals(AhkTags.options.fileExtension["vim"], "vimscript")
+	}
+
+	@Test_addRegEx() {
+		AhkTags.run(["--add-filetype", "vimscript=vim"
+				, "--add-regex", "vimscript=/^\s*fu(nc(tion)?)?!?\s+(\w+)\s*\("
+				. "/3/mi``a/f"
+				, "--add-regex", "vimscript=/^\s*[sl]et\s+(\w+)"
+				. "/1/mi``a/v"
+				, "--add-filetype", "dosbatch=bat+cmd"
+				, "--add-regex", "dosbatch=/^\s*:(\w+)/1/mi``a/l"])
+		this.assertEquals(AhkTags.options.fileExtension["vim"], "vimscript")
+		this.assertEquals(AhkTags.options.tagRegEx["vimscript", 1].regEx
+				, "^\s*fu(nc(tion)?)?!?\s+(\w+)\s*\(")
+		this.assertEquals(AhkTags.options.tagRegEx["vimscript", 1].replacement
+				, 3)
+		this.assertEquals(AhkTags.options.tagRegEx["vimscript", 1].regExOptions
+				, "mi``a")
+		this.assertEquals(AhkTags.options.tagRegEx["vimscript", 1].kind, "f")
+		this.assertEquals(AhkTags.options.tagRegEx["vimscript", 2].regEx
+				, "^\s*[sl]et\s+(\w+)")
+		this.assertEquals(AhkTags.options.tagRegEx["vimscript", 2].replacement
+				, 1)
+		this.assertEquals(AhkTags.options.tagRegEx["vimscript", 2].regExOptions
+				, "mi``a")
+		this.assertEquals(AhkTags.options.tagRegEx["vimscript", 2].kind, "v")
+		this.assertEquals(AhkTags.options.fileExtension["bat"], "dosbatch")
+		this.assertEquals(AhkTags.options.fileExtension["cmd"], "dosbatch")
+		this.assertEquals(AhkTags.options.tagRegEx["dosbatch", 1].regEx
+				, "^\s*:(\w+)")
+		this.assertEquals(AhkTags.options.tagRegEx["dosbatch", 1].replacement
+				, 1)
+		this.assertEquals(AhkTags.options.tagRegEx["dosbatch", 1].regExOptions
+				, "mi``a")
+		this.assertEquals(AhkTags.options.tagRegEx["dosbatch", 1].kind, "l")
+	}
 }
 
 exitapp AhkTagsTest.runTests()
