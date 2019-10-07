@@ -52,6 +52,7 @@ class AhkTagsTest extends TestCase {
 	}
 
 	@Test_determineFiles() {
+		cb_addFileType("autohotkey=ahk")
 		fileNames := AhkTags.determineFilesToBeTagged(A_ScriptDir
 				. "\testdata\*")
 		this.assertEquals(fileNames.maxIndex(), 1)
@@ -60,6 +61,7 @@ class AhkTagsTest extends TestCase {
 	}
 
 	@Test_determineFilesRecursive() {
+		cb_addFileType("autohotkey=ahk")
 		AhkTags.options.recurse := true
 		fileNames := AhkTags.determineFilesToBeTagged(A_ScriptDir
 				. "\testdata\*")
