@@ -314,17 +314,16 @@ cb_addRegEx(value, noOption="") {
 }
 
 #NoEnv ; notest-begin
+#Warn All, StdOut
 #NoTrayIcon
 #SingleInstance Off
 ListLines Off
 SetBatchLines -1
 
-#Include <ansi>
-#Include <optparser>
-#Include <string>
-#Include <object>
+#Include <app>
+#Include <cui-libs>
 #Include <testcase>
 
 main:
 	Ansi.NO_BUFFER := true
-exitapp AhkTags.run(A_Args) ; notest-end
+exitapp App.checkRequiredClasses(AhkTags).run(A_Args) ; notest-end
